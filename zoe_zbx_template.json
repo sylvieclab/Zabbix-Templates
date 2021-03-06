@@ -1,0 +1,656 @@
+{
+    "zabbix_export": {
+        "version": "5.4",
+        "date": "2021-03-06T19:20:48Z",
+        "groups": [
+            {
+                "name": "Templates"
+            }
+        ],
+        "templates": [
+            {
+                "template": "Zoes Collective Template",
+                "name": "Zoes Collective Template",
+                "groups": [
+                    {
+                        "name": "Templates"
+                    }
+                ],
+                "applications": [
+                    {
+                        "name": "CPU"
+                    },
+                    {
+                        "name": "qBittorrent"
+                    },
+                    {
+                        "name": "VMWare"
+                    }
+                ],
+                "items": [
+                    {
+                        "name": "apiversion",
+                        "type": "HTTP_AGENT",
+                        "key": "apiversion",
+                        "delay": "24h",
+                        "history": "0",
+                        "trends": "0",
+                        "value_type": "TEXT",
+                        "applications": [
+                            {
+                                "name": "qBittorrent"
+                            }
+                        ],
+                        "url": "{$URLQBITTORRENT}/api/v2/app/webapiVersion",
+                        "triggers": [
+                            {
+                                "expression": "{last(#1)}<>\"2.2.1\"",
+                                "name": "qBittorrent API Version Check",
+                                "priority": "INFO",
+                                "description": "Checking to make sure the version of qBittorrent's API hasn't changed.",
+                                "manual_close": "YES"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Conection Status",
+                        "type": "DEPENDENT",
+                        "key": "qbittorrent.connection_status",
+                        "delay": "0",
+                        "history": "7d",
+                        "trends": "0",
+                        "value_type": "TEXT",
+                        "applications": [
+                            {
+                                "name": "qBittorrent"
+                            }
+                        ],
+                        "preprocessing": [
+                            {
+                                "type": "JSONPATH",
+                                "parameters": [
+                                    "$.connection_status"
+                                ]
+                            }
+                        ],
+                        "master_item": {
+                            "key": "transferinfo"
+                        }
+                    },
+                    {
+                        "name": "Download Speed",
+                        "type": "DEPENDENT",
+                        "key": "qbittorrent.download",
+                        "delay": "0",
+                        "history": "7d",
+                        "trends": "14d",
+                        "units": "Bps",
+                        "applications": [
+                            {
+                                "name": "qBittorrent"
+                            }
+                        ],
+                        "preprocessing": [
+                            {
+                                "type": "JSONPATH",
+                                "parameters": [
+                                    "$.dl_info_speed"
+                                ]
+                            }
+                        ],
+                        "master_item": {
+                            "key": "transferinfo"
+                        }
+                    },
+                    {
+                        "name": "Download Data",
+                        "type": "DEPENDENT",
+                        "key": "qbittorrent.dwldata",
+                        "delay": "0",
+                        "history": "7d",
+                        "trends": "14d",
+                        "applications": [
+                            {
+                                "name": "qBittorrent"
+                            }
+                        ],
+                        "preprocessing": [
+                            {
+                                "type": "JSONPATH",
+                                "parameters": [
+                                    "$.dl_info_data"
+                                ]
+                            }
+                        ],
+                        "master_item": {
+                            "key": "transferinfo"
+                        }
+                    },
+                    {
+                        "name": "qBittorrent Version",
+                        "type": "HTTP_AGENT",
+                        "key": "qbittorrent.version",
+                        "delay": "24h",
+                        "history": "0",
+                        "trends": "0",
+                        "value_type": "TEXT",
+                        "applications": [
+                            {
+                                "name": "qBittorrent"
+                            }
+                        ],
+                        "url": "{$URLQBITTORRENT}/api/v2/app/version",
+                        "triggers": [
+                            {
+                                "expression": "{last()}<>\"v4.1.9.1\"",
+                                "name": "qBittorrent Version Check",
+                                "priority": "INFO",
+                                "description": "Checking to make sure the version of qBittorrent hasn't changed.",
+                                "manual_close": "YES"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "CPU utilization",
+                        "key": "system.cpu.util",
+                        "history": "7d",
+                        "trends": "14d",
+                        "value_type": "FLOAT",
+                        "units": "%",
+                        "applications": [
+                            {
+                                "name": "CPU"
+                            }
+                        ],
+                        "triggers": [
+                            {
+                                "expression": "{min(5)}>=70",
+                                "recovery_mode": "RECOVERY_EXPRESSION",
+                                "recovery_expression": "{min(5)}<70",
+                                "name": "CPU Utilization over 70%",
+                                "priority": "WARNING",
+                                "description": "CPU Utilization on device is running over 70% over a 5 minute period."
+                            },
+                            {
+                                "expression": "{min(5)}>=80",
+                                "recovery_mode": "RECOVERY_EXPRESSION",
+                                "recovery_expression": "{min(5)}<80",
+                                "name": "CPU Utilization over 80%",
+                                "priority": "AVERAGE",
+                                "description": "CPU Utilization on device is running over 80% over a 5 minute period."
+                            },
+                            {
+                                "expression": "{min(5)}>=90",
+                                "recovery_mode": "RECOVERY_EXPRESSION",
+                                "recovery_expression": "{min(5)}<90",
+                                "name": "CPU Utilization over 90%",
+                                "priority": "HIGH",
+                                "description": "CPU Utilization on device is running over 90% over a 5 minute period."
+                            },
+                            {
+                                "expression": "{min(5)}>=98",
+                                "recovery_mode": "RECOVERY_EXPRESSION",
+                                "recovery_expression": "{min(5)}<98",
+                                "name": "CPU Utilization over 98%",
+                                "priority": "DISASTER",
+                                "description": "CPU Utilization on device is running over 98% over a 5 minute period."
+                            }
+                        ]
+                    },
+                    {
+                        "name": "torrent list",
+                        "type": "HTTP_AGENT",
+                        "key": "torrentlist",
+                        "delay": "5m",
+                        "history": "0",
+                        "trends": "0",
+                        "value_type": "TEXT",
+                        "applications": [
+                            {
+                                "name": "qBittorrent"
+                            }
+                        ],
+                        "preprocessing": [
+                            {
+                                "type": "JSONPATH",
+                                "parameters": [
+                                    "$..['name']"
+                                ]
+                            }
+                        ],
+                        "url": "{$URLQBITTORRENT}/api/v2/torrents/info"
+                    },
+                    {
+                        "name": "qBittorrent transferInfo",
+                        "type": "HTTP_AGENT",
+                        "key": "transferinfo",
+                        "delay": "5m",
+                        "history": "0",
+                        "trends": "0",
+                        "value_type": "TEXT",
+                        "applications": [
+                            {
+                                "name": "qBittorrent"
+                            }
+                        ],
+                        "url": "{$URLQBITTORRENT}/api/v2/transfer/info"
+                    },
+                    {
+                        "name": "CPU usage",
+                        "type": "SIMPLE",
+                        "key": "vmware.vm.cpu.usage[{$VMWARE.URL},{$VMWARE.VM.UUID}]",
+                        "history": "7d",
+                        "trends": "14d",
+                        "units": "Hz",
+                        "username": "{$VMWARE.USERNAME}",
+                        "password": "{$VMWARE.PASSWORD}",
+                        "applications": [
+                            {
+                                "name": "VMWare"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "VMware: Host memory usage",
+                        "type": "SIMPLE",
+                        "key": "vmware.vm.memory.size.usage.host[{$VMWARE.URL},{$VMWARE.VM.UUID}]",
+                        "history": "7d",
+                        "trends": "14d",
+                        "units": "B",
+                        "username": "{$VMWARE.USERNAME}",
+                        "password": "{$VMWARE.PASSWORD}",
+                        "applications": [
+                            {
+                                "name": "VMWare"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "VMware: Memory size",
+                        "type": "SIMPLE",
+                        "key": "vmware.vm.memory.size[{$VMWARE.URL},{$VMWARE.VM.UUID}]",
+                        "history": "7d",
+                        "trends": "14d",
+                        "units": "B",
+                        "username": "{$VMWARE.USERNAME}",
+                        "password": "{$VMWARE.PASSWORD}",
+                        "applications": [
+                            {
+                                "name": "VMWare"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "VMware: Power state",
+                        "type": "SIMPLE",
+                        "key": "vmware.vm.powerstate[{$VMWARE.URL},{$VMWARE.VM.UUID}]",
+                        "history": "7d",
+                        "trends": "14d",
+                        "username": "{$VMWARE.USERNAME}",
+                        "password": "{$VMWARE.PASSWORD}",
+                        "applications": [
+                            {
+                                "name": "VMWare"
+                            }
+                        ],
+                        "valuemap": {
+                            "name": "VirtualMachinePowerState"
+                        },
+                        "preprocessing": [
+                            {
+                                "type": "DISCARD_UNCHANGED_HEARTBEAT",
+                                "parameters": [
+                                    "1h"
+                                ]
+                            }
+                        ],
+                        "triggers": [
+                            {
+                                "expression": "{min(2)}=0",
+                                "recovery_mode": "RECOVERY_EXPRESSION",
+                                "recovery_expression": "{min(2)}=1",
+                                "name": "VM is powered off",
+                                "priority": "INFO",
+                                "description": "Data is reporting the device as powered off for the last 2 minutes. If this is expected, set the device in maintenance mode. If not, power on the device. This alert will auto resolve after getting 2 minutes of data showing a powered on state."
+                            }
+                        ]
+                    },
+                    {
+                        "name": "VMware: Uptime",
+                        "type": "SIMPLE",
+                        "key": "vmware.vm.uptime[{$VMWARE.URL},{$VMWARE.VM.UUID}]",
+                        "delay": "12h",
+                        "history": "7d",
+                        "trends": "14d",
+                        "units": "uptime",
+                        "username": "{$VMWARE.USERNAME}",
+                        "password": "{$VMWARE.PASSWORD}",
+                        "applications": [
+                            {
+                                "name": "VMWare"
+                            }
+                        ]
+                    }
+                ],
+                "discovery_rules": [
+                    {
+                        "name": "Discover VMware clusters",
+                        "type": "SIMPLE",
+                        "key": "vmware.cluster.discovery[{$VMWARE.URL}]",
+                        "username": "{$VMWARE.USERNAME}",
+                        "password": "{$VMWARE.PASSWORD}",
+                        "description": "Discovery of clusters",
+                        "item_prototypes": [
+                            {
+                                "name": "Status of \"{#CLUSTER.NAME}\" cluster",
+                                "type": "SIMPLE",
+                                "key": "vmware.cluster.status[{$VMWARE.URL},{#CLUSTER.NAME}]",
+                                "username": "{$VMWARE.USERNAME}",
+                                "password": "{$VMWARE.PASSWORD}",
+                                "applications": [
+                                    {
+                                        "name": "VMWare"
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Discover VMware datastores",
+                        "type": "SIMPLE",
+                        "key": "vmware.datastore.discovery[{$VMWARE.URL}]",
+                        "username": "{$VMWARE.USERNAME}",
+                        "password": "{$VMWARE.PASSWORD}",
+                        "item_prototypes": [
+                            {
+                                "name": "Free space on datastore {#DATASTORE} (percentage)",
+                                "type": "SIMPLE",
+                                "key": "vmware.datastore.size[{$VMWARE.URL},{#DATASTORE},pfree]",
+                                "history": "7d",
+                                "trends": "14d",
+                                "value_type": "FLOAT",
+                                "units": "%",
+                                "username": "{$VMWARE.USERNAME}",
+                                "password": "{$VMWARE.PASSWORD}",
+                                "applications": [
+                                    {
+                                        "name": "VMWare"
+                                    }
+                                ]
+                            },
+                            {
+                                "name": "Total size of datastore {#DATASTORE}",
+                                "type": "SIMPLE",
+                                "key": "vmware.datastore.size[{$VMWARE.URL},{#DATASTORE}]",
+                                "history": "7d",
+                                "trends": "14d",
+                                "units": "B",
+                                "username": "{$VMWARE.USERNAME}",
+                                "password": "{$VMWARE.PASSWORD}",
+                                "applications": [
+                                    {
+                                        "name": "VMWare"
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Discover VMware hypervisors",
+                        "type": "SIMPLE",
+                        "key": "vmware.hv.discovery[{$VMWARE.URL}]",
+                        "username": "{$VMWARE.USERNAME}",
+                        "password": "{$VMWARE.PASSWORD}",
+                        "host_prototypes": [
+                            {
+                                "host": "{#HV.UUID}",
+                                "name": "{#HV.NAME}",
+                                "group_links": [
+                                    {
+                                        "group": {
+                                            "name": "Templates"
+                                        }
+                                    }
+                                ],
+                                "group_prototypes": [
+                                    {
+                                        "name": "{#CLUSTER.NAME}"
+                                    },
+                                    {
+                                        "name": "{#DATACENTER.NAME}"
+                                    }
+                                ],
+                                "templates": [
+                                    {
+                                        "name": "Zoes Collective Template"
+                                    }
+                                ],
+                                "macros": [
+                                    {
+                                        "macro": "{$VMWARE.HV.UUID}",
+                                        "value": "{#HV.UUID}",
+                                        "description": "UUID of hypervisor."
+                                    }
+                                ],
+                                "custom_interfaces": "YES",
+                                "interfaces": [
+                                    {
+                                        "ip": "{#HV.IP}"
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Discover VMware VMs",
+                        "type": "SIMPLE",
+                        "key": "vmware.vm.discovery[{$VMWARE.URL}]",
+                        "username": "{$VMWARE.USERNAME}",
+                        "password": "{$VMWARE.PASSWORD}",
+                        "description": "Discovery of guest virtual machines.",
+                        "host_prototypes": [
+                            {
+                                "host": "{#VM.UUID}",
+                                "name": "{#VM.NAME}",
+                                "group_links": [
+                                    {
+                                        "group": {
+                                            "name": "Templates"
+                                        }
+                                    }
+                                ],
+                                "templates": [
+                                    {
+                                        "name": "Zoes Collective Template"
+                                    }
+                                ],
+                                "macros": [
+                                    {
+                                        "macro": "{$VMWARE.VM.UUID}",
+                                        "value": "{#VM.UUID}",
+                                        "description": "UUID of guest virtual machine."
+                                    }
+                                ],
+                                "custom_interfaces": "YES",
+                                "interfaces": [
+                                    {
+                                        "ip": "{#VM.IP}"
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Mounted filesystem discovery",
+                        "type": "SIMPLE",
+                        "key": "vmware.vm.vfs.fs.discovery[{$VMWARE.URL},{$VMWARE.VM.UUID}]",
+                        "delay": "1h",
+                        "username": "{$VMWARE.USERNAME}",
+                        "password": "{$VMWARE.PASSWORD}",
+                        "filter": {
+                            "evaltype": "AND",
+                            "conditions": [
+                                {
+                                    "macro": "{#FSDRIVETYPE}",
+                                    "value": "{$VFS.FS.FSDRIVETYPE.MATCHES}",
+                                    "formulaid": "A"
+                                },
+                                {
+                                    "macro": "{#FSDRIVETYPE}",
+                                    "value": "{$VFS.FS.FSDRIVETYPE.NOT_MATCHES}",
+                                    "operator": "NOT_MATCHES_REGEX",
+                                    "formulaid": "B"
+                                },
+                                {
+                                    "macro": "{#FSNAME}",
+                                    "value": "{$VFS.FS.FSNAME.MATCHES}",
+                                    "formulaid": "C"
+                                },
+                                {
+                                    "macro": "{#FSNAME}",
+                                    "value": "{$VFS.FS.FSNAME.NOT_MATCHES}",
+                                    "operator": "NOT_MATCHES_REGEX",
+                                    "formulaid": "D"
+                                },
+                                {
+                                    "macro": "{#FSTYPE}",
+                                    "value": "{$VFS.FS.FSTYPE.MATCHES}",
+                                    "formulaid": "E"
+                                },
+                                {
+                                    "macro": "{#FSTYPE}",
+                                    "value": "{$VFS.FS.FSTYPE.NOT_MATCHES}",
+                                    "operator": "NOT_MATCHES_REGEX",
+                                    "formulaid": "F"
+                                }
+                            ]
+                        },
+                        "description": "Discovery of all guest file systems.",
+                        "item_prototypes": [
+                            {
+                                "name": "VMware: Free disk space on {#FSNAME}",
+                                "type": "SIMPLE",
+                                "key": "vmware.vm.vfs.fs.size[{$VMWARE.URL},{$VMWARE.VM.UUID},{#FSNAME},free]",
+                                "delay": "1h",
+                                "history": "7d",
+                                "trends": "30d",
+                                "units": "B",
+                                "username": "{$VMWARE.USERNAME}",
+                                "password": "{$VMWARE.PASSWORD}"
+                            },
+                            {
+                                "name": "VMware: Free disk space on {#FSNAME} (percentage)",
+                                "type": "SIMPLE",
+                                "key": "vmware.vm.vfs.fs.size[{$VMWARE.URL},{$VMWARE.VM.UUID},{#FSNAME},pfree]",
+                                "delay": "1h",
+                                "history": "7d",
+                                "trends": "30d",
+                                "value_type": "FLOAT",
+                                "units": "%",
+                                "username": "{$VMWARE.USERNAME}",
+                                "password": "{$VMWARE.PASSWORD}",
+                                "trigger_prototypes": [
+                                    {
+                                        "expression": "{min(#5)}<=2",
+                                        "recovery_mode": "RECOVERY_EXPRESSION",
+                                        "recovery_expression": "{min(5)}>2",
+                                        "name": "Free disk space is less than 2% on {#FSNAME}",
+                                        "priority": "DISASTER",
+                                        "description": "Available drive storage has fallen below 2%. You do not need to manually close this item. Get on the device and return available storage to greater than 2% and the alert will auto resolve."
+                                    },
+                                    {
+                                        "expression": "{min(#5)}<=10",
+                                        "recovery_mode": "RECOVERY_EXPRESSION",
+                                        "recovery_expression": "{min(5)}>10",
+                                        "name": "Free disk space is less than 10% on {#FSNAME}",
+                                        "priority": "HIGH",
+                                        "description": "Available drive storage has fallen below 10%. You do not need to manually close this item. Get on the device and return available storage to greater than 2% and the alert will auto resolve."
+                                    },
+                                    {
+                                        "expression": "{min(#5)}<=15",
+                                        "recovery_mode": "RECOVERY_EXPRESSION",
+                                        "recovery_expression": "{min(5)}>15",
+                                        "name": "Free disk space is less than 15% on {#FSNAME}",
+                                        "priority": "AVERAGE",
+                                        "description": "Available drive storage has fallen below 15%. You do not need to manually close this item. Get on the device and return available storage to greater than 2% and the alert will auto resolve."
+                                    },
+                                    {
+                                        "expression": "{min(#5)}<=20",
+                                        "recovery_mode": "RECOVERY_EXPRESSION",
+                                        "recovery_expression": "{min(5)}>20",
+                                        "name": "Free disk space is less than 20% on {#FSNAME}",
+                                        "priority": "WARNING",
+                                        "description": "Available drive storage has fallen below 20%. You do not need to manually close this item. Get on the device and return available storage to greater than 2% and the alert will auto resolve."
+                                    }
+                                ]
+                            },
+                            {
+                                "name": "VMware: Total disk space on {#FSNAME}",
+                                "type": "SIMPLE",
+                                "key": "vmware.vm.vfs.fs.size[{$VMWARE.URL},{$VMWARE.VM.UUID},{#FSNAME},total]",
+                                "delay": "1h",
+                                "history": "7d",
+                                "trends": "30d",
+                                "units": "B",
+                                "username": "{$VMWARE.USERNAME}",
+                                "password": "{$VMWARE.PASSWORD}"
+                            },
+                            {
+                                "name": "VMware: Used disk space on {#FSNAME}",
+                                "type": "SIMPLE",
+                                "key": "vmware.vm.vfs.fs.size[{$VMWARE.URL},{$VMWARE.VM.UUID},{#FSNAME},used]",
+                                "history": "7d",
+                                "trends": "30d",
+                                "units": "B",
+                                "username": "{$VMWARE.USERNAME}",
+                                "password": "{$VMWARE.PASSWORD}"
+                            }
+                        ]
+                    }
+                ],
+                "macros": [
+                    {
+                        "macro": "{$URLQBITTORRENT}",
+                        "value": ""
+                    },
+                    {
+                        "macro": "{$VMWARE.PASSWORD}",
+                        "description": "VMware service {$USERNAME} user password"
+                    },
+                    {
+                        "macro": "{$VMWARE.URL}",
+                        "description": "VMware service (vCenter or ESX hypervisor) SDK URL (https://servername/sdk)"
+                    },
+                    {
+                        "macro": "{$VMWARE.USERNAME}",
+                        "description": "VMware service user name"
+                    },
+                    {
+                        "macro": "{$VMWARE.VM.UUID}",
+                        "value": "",
+                        "description": "VM UUID"
+                    }
+                ],
+                "valuemaps": [
+                    {
+                        "name": "VirtualMachinePowerState",
+                        "mappings": [
+                            {
+                                "value": "0",
+                                "newvalue": "poweredOff"
+                            },
+                            {
+                                "value": "1",
+                                "newvalue": "poweredOn"
+                            },
+                            {
+                                "value": "2",
+                                "newvalue": "suspended"
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+}
