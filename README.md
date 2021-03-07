@@ -42,13 +42,21 @@ You will need to enable SSH access to your VMware ESXi host.
 ***What is included in this template?***
 *This list is not final and will continue to be added to.*
  - CPU Utilization (Percentage): Item and Triggers
- - CPU Usage (read in Hz): Item
+ - CPU Usage (Hz, MHz, GHz): Item
+ - ESXi Host memory Usage: Item
+ - Filesystem Discovery (Percent and numeric): Items and Triggers.
+ - Guest Memory Usage (Numeric): 
+ - Memory Max Size (GB): Item
+ - Power State: Items and Triggers
  - qBittorrent Version and qBittorrent API version check: Item and Triggers
- - qBittorrent Torrent List: Item
- - qBittorrent Connection Status: Item
+ - qBittorrent Torrent List: Item - If the torrent queue is empty, there is a custom fail during preprocessing that will write the result as "Torrent queue empty".
+ - qBittorrent Connection Status: Item & Trigger
  - qBittorrent Download Speed: Item
  - qBittorrent Amount Downloaded: Item
- - VMware Host memory usage: Item
- - VMware Memory Size: Item
- - VMware Power State: Items and Triggers
- - VMware Uptime: Item
+ - Power State: Items and Triggers
+ - Uptime: Item
+ - VMware Cluster Discovery
+ - VMware Datastore Discovery
+ - VMware Hypervisor Discovery - Will sort into host group "Hypervisors")
+ - VMware Virtual Machine Discovery - Will sort into host group "Virtual Machines")
+ - Windows Services Discovery - Custom overrides are pre-set to filter out annoying Windows background services (looking at you, BITS and OneSync.)

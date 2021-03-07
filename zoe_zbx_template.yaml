@@ -1,9 +1,13 @@
 zabbix_export:
   version: '5.4'
-  date: '2021-03-06T19:20:51Z'
+  date: '2021-03-07T02:10:35Z'
   groups:
     -
+      name: Hypervisors
+    -
       name: Templates
+    -
+      name: 'Virtual Machines'
   templates:
     -
       template: 'Zoes Collective Template'
@@ -15,7 +19,13 @@ zabbix_export:
         -
           name: CPU
         -
+          name: Memory
+        -
           name: qBittorrent
+        -
+          name: Services
+        -
+          name: Storage
         -
           name: VMWare
       items:
@@ -56,6 +66,13 @@ zabbix_export:
                 - $.connection_status
           master_item:
             key: transferinfo
+          triggers:
+            -
+              expression: '{last(#1)}<>"firewalled"'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: '{last(#1)}="firewalled"'
+              name: 'Firewall Status'
+              priority: WARNING
         -
           name: 'Download Speed'
           type: DEPENDENT
@@ -154,7 +171,7 @@ zabbix_export:
           type: HTTP_AGENT
           key: torrentlist
           delay: 5m
-          history: '0'
+          history: 1h
           trends: '0'
           value_type: TEXT
           applications:
@@ -165,6 +182,8 @@ zabbix_export:
               type: JSONPATH
               parameters:
                 - '$..[''name'']'
+              error_handler: CUSTOM_VALUE
+              error_handler_params: 'Torrent queue empty'
           url: '{$URLQBITTORRENT}/api/v2/torrents/info'
         -
           name: 'qBittorrent transferInfo'
@@ -189,9 +208,21 @@ zabbix_export:
           password: '{$VMWARE.PASSWORD}'
           applications:
             -
-              name: VMWare
+              name: CPU
         -
-          name: 'VMware: Host memory usage'
+          name: 'Guest memory usage'
+          type: SIMPLE
+          key: 'vmware.vm.memory.size.usage.guest[{$VMWARE.URL},{$VMWARE.VM.UUID}]'
+          history: 7d
+          trends: 14d
+          units: B
+          username: '{$VMWARE.USERNAME}'
+          password: '{$VMWARE.PASSWORD}'
+          applications:
+            -
+              name: Memory
+        -
+          name: 'Host memory usage'
           type: SIMPLE
           key: 'vmware.vm.memory.size.usage.host[{$VMWARE.URL},{$VMWARE.VM.UUID}]'
           history: 7d
@@ -201,9 +232,9 @@ zabbix_export:
           password: '{$VMWARE.PASSWORD}'
           applications:
             -
-              name: VMWare
+              name: Memory
         -
-          name: 'VMware: Memory size'
+          name: 'Memory size'
           type: SIMPLE
           key: 'vmware.vm.memory.size[{$VMWARE.URL},{$VMWARE.VM.UUID}]'
           history: 7d
@@ -213,9 +244,9 @@ zabbix_export:
           password: '{$VMWARE.PASSWORD}'
           applications:
             -
-              name: VMWare
+              name: Memory
         -
-          name: 'VMware: Power state'
+          name: 'Power state'
           type: SIMPLE
           key: 'vmware.vm.powerstate[{$VMWARE.URL},{$VMWARE.VM.UUID}]'
           history: 7d
@@ -241,7 +272,7 @@ zabbix_export:
               priority: INFO
               description: 'Data is reporting the device as powered off for the last 2 minutes. If this is expected, set the device in maintenance mode. If not, power on the device. This alert will auto resolve after getting 2 minutes of data showing a powered on state.'
         -
-          name: 'VMware: Uptime'
+          name: Uptime
           type: SIMPLE
           key: 'vmware.vm.uptime[{$VMWARE.URL},{$VMWARE.VM.UUID}]'
           delay: 12h
@@ -254,6 +285,339 @@ zabbix_export:
             -
               name: VMWare
       discovery_rules:
+        -
+          name: 'Windows services discovery'
+          key: service.discovery
+          filter:
+            evaltype: AND
+            conditions:
+              -
+                macro: '{#SERVICE.NAME}'
+                value: '{$SERVICE.NAME.MATCHES}'
+                formulaid: A
+              -
+                macro: '{#SERVICE.NAME}'
+                value: '{$SERVICE.NAME.NOT_MATCHES}'
+                operator: NOT_MATCHES_REGEX
+                formulaid: B
+              -
+                macro: '{#SERVICE.STARTUPNAME}'
+                value: '{$SERVICE.STARTUPNAME.MATCHES}'
+                formulaid: C
+              -
+                macro: '{#SERVICE.STARTUPNAME}'
+                value: '{$SERVICE.STARTUPNAME.NOT_MATCHES}'
+                operator: NOT_MATCHES_REGEX
+                formulaid: D
+          item_prototypes:
+            -
+              name: 'State of service "{#SERVICE.NAME}" ({#SERVICE.DISPLAYNAME})'
+              key: 'service.info["{#SERVICE.NAME}",state]'
+              history: 7d
+              trends: 14d
+              applications:
+                -
+                  name: Services
+              trigger_prototypes:
+                -
+                  expression: '{min(#3)}<>0'
+                  name: '"{#SERVICE.NAME}" ({#SERVICE.DISPLAYNAME}) is not running (startup type {#SERVICE.STARTUPNAME})'
+                  priority: INFO
+                  description: 'The service has a state other than "Running" for the last three checks.'
+          overrides:
+            -
+              name: 'DO NOT DISCOVER - SERVICES'
+              step: '1'
+              filter:
+                conditions:
+                  -
+                    macro: '{#SERVICE.NAME}'
+                    value: 'AudioEndpointBuilder_*|Audiosrv_*|BFE_*|BITS_*|BrokerInfrastructure_*|CDPSvc_*|CDPUserSvc_a7ae7_*|CoreMessagingRegistrar_*|CryptSvc_*|DcomLaunch_*|Dhcp_*|DiagTrack_*|DispBrokerDesktopSvc_*|Dnscache_*'
+                    formulaid: A
+                  -
+                    macro: '{#SERVICE.NAME}'
+                    value: 'DPS_*|DusmSvc_*|EventLog_*|EventSystem_*|FontCache_*|IKEEXT_*|iphlpsvc_*|LanmanServer_*|LanmanWorkstation_*|LSM_*|NlaSvc_*|nsi_*|OneSyncSvc_a7ae7_*|Power|ProfSvc_*|RasMan_*|RpcEptMapper_*|RpcSs_*|Schedule_*|SamSs_*|SENS_*|SgrmBroker_*|ShellHWDetection_*'
+                    formulaid: B
+                  -
+                    macro: '{#SERVICE.NAME}'
+                    value: 'Spooler_*|StorSvc_*|SysMain_*|SystemEventsBroker_*|Themes_*|TrkWks_*|UserManager_*|UsoSvc_*|VGAuthService_*|VM3DService_*|Wcmsvc_*|WinDefend_*|Winmgmt_*|WpnService_*|WpnUserService_a7ae7_*|wscsvc_*|WSearch_*|Zabbix Agent_*|'
+                    formulaid: C
+              operations:
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: AudioEndpointBuilder
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: Audiosrv
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: BFE
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: BITS
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: BrokerInfrastructure
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: CDPSvc
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: CDPUserSvc_a7ae7
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: CoreMessagingRegistrar
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: CryptSvc
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: DcomLaunch
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: Dhcp
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: DiagTrack
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: DispBrokerDesktopSvc
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: Dnscache
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: DPS
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: DusmSvc
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: EventLog
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: EventSystem
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: FontCache
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: IKEEXT
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: iphlpsvc
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: LanmanServer
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: LanmanWorkstation
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: LSM
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: NlaSvc
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: nsi
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: OneSyncSvc_a7ae7
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: Power
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: ProfSvc
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: RasMan
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: RpcEptMapper
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: RpcSs
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: SamSs
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: Schedule
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: SENS
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: SgrmBroker
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: ShellHWDetection
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: Spooler
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: StorSvc
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: SysMain
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: SystemEventsBroker
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: Themes
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: TrkWks
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: UserManager
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: UsoSvc
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: VGAuthService
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: VM3DService
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: Wcmsvc
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: WinDefend
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: Winmgmt
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: WpnService
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: WpnUserService_a7ae7
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: wscsvc
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: WSearch
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: 'Zabbix Agent'
+                  discover: NO_DISCOVER
         -
           name: 'Discover VMware clusters'
           type: SIMPLE
@@ -316,7 +680,7 @@ zabbix_export:
               group_links:
                 -
                   group:
-                    name: Templates
+                    name: Hypervisors
               group_prototypes:
                 -
                   name: '{#CLUSTER.NAME}'
@@ -348,7 +712,7 @@ zabbix_export:
               group_links:
                 -
                   group:
-                    name: Templates
+                    name: 'Virtual Machines'
               templates:
                 -
                   name: 'Zoes Collective Template'
@@ -370,57 +734,33 @@ zabbix_export:
           password: '{$VMWARE.PASSWORD}'
           filter:
             evaltype: AND
-            conditions:
-              -
-                macro: '{#FSDRIVETYPE}'
-                value: '{$VFS.FS.FSDRIVETYPE.MATCHES}'
-                formulaid: A
-              -
-                macro: '{#FSDRIVETYPE}'
-                value: '{$VFS.FS.FSDRIVETYPE.NOT_MATCHES}'
-                operator: NOT_MATCHES_REGEX
-                formulaid: B
-              -
-                macro: '{#FSNAME}'
-                value: '{$VFS.FS.FSNAME.MATCHES}'
-                formulaid: C
-              -
-                macro: '{#FSNAME}'
-                value: '{$VFS.FS.FSNAME.NOT_MATCHES}'
-                operator: NOT_MATCHES_REGEX
-                formulaid: D
-              -
-                macro: '{#FSTYPE}'
-                value: '{$VFS.FS.FSTYPE.MATCHES}'
-                formulaid: E
-              -
-                macro: '{#FSTYPE}'
-                value: '{$VFS.FS.FSTYPE.NOT_MATCHES}'
-                operator: NOT_MATCHES_REGEX
-                formulaid: F
           description: 'Discovery of all guest file systems.'
           item_prototypes:
             -
-              name: 'VMware: Free disk space on {#FSNAME}'
+              name: 'Free disk space on {#FSNAME}'
               type: SIMPLE
               key: 'vmware.vm.vfs.fs.size[{$VMWARE.URL},{$VMWARE.VM.UUID},{#FSNAME},free]'
-              delay: 1h
               history: 7d
               trends: 30d
               units: B
               username: '{$VMWARE.USERNAME}'
               password: '{$VMWARE.PASSWORD}'
+              applications:
+                -
+                  name: Storage
             -
-              name: 'VMware: Free disk space on {#FSNAME} (percentage)'
+              name: 'Free disk space on {#FSNAME} (percentage)'
               type: SIMPLE
               key: 'vmware.vm.vfs.fs.size[{$VMWARE.URL},{$VMWARE.VM.UUID},{#FSNAME},pfree]'
-              delay: 1h
               history: 7d
               trends: 30d
               value_type: FLOAT
               units: '%'
               username: '{$VMWARE.USERNAME}'
               password: '{$VMWARE.PASSWORD}'
+              applications:
+                -
+                  name: Storage
               trigger_prototypes:
                 -
                   expression: '{min(#5)}<=2'
@@ -451,17 +791,31 @@ zabbix_export:
                   priority: WARNING
                   description: 'Available drive storage has fallen below 20%. You do not need to manually close this item. Get on the device and return available storage to greater than 2% and the alert will auto resolve.'
             -
-              name: 'VMware: Total disk space on {#FSNAME}'
+              name: 'Used disk space on {#FSNAME} (percentage)'
+              type: SIMPLE
+              key: 'vmware.vm.vfs.fs.size[{$VMWARE.URL},{$VMWARE.VM.UUID},{#FSNAME},pused]'
+              history: 7d
+              trends: 30d
+              units: '%'
+              username: '{$VMWARE.USERNAME}'
+              password: '{$VMWARE.PASSWORD}'
+              applications:
+                -
+                  name: Storage
+            -
+              name: 'Total disk space on {#FSNAME}'
               type: SIMPLE
               key: 'vmware.vm.vfs.fs.size[{$VMWARE.URL},{$VMWARE.VM.UUID},{#FSNAME},total]'
-              delay: 1h
               history: 7d
               trends: 30d
               units: B
               username: '{$VMWARE.USERNAME}'
               password: '{$VMWARE.PASSWORD}'
+              applications:
+                -
+                  name: Storage
             -
-              name: 'VMware: Used disk space on {#FSNAME}'
+              name: 'Used disk space on {#FSNAME}'
               type: SIMPLE
               key: 'vmware.vm.vfs.fs.size[{$VMWARE.URL},{$VMWARE.VM.UUID},{#FSNAME},used]'
               history: 7d
@@ -469,10 +823,25 @@ zabbix_export:
               units: B
               username: '{$VMWARE.USERNAME}'
               password: '{$VMWARE.PASSWORD}'
+              applications:
+                -
+                  name: Storage
       macros:
         -
+          macro: '{$SERVICE.NAME.MATCHES}'
+          value: '^.*$'
+        -
+          macro: '{$SERVICE.NAME.NOT_MATCHES}'
+          value: '^RemoteRegistry|MMCSS|gupdate|SysmonLog|clr_optimization_v.+|clr_optimization_v.+|sppsvc|gpsvc|Pml Driver HPZ12|Net Driver HPZ12|MapsBroker|IntelAudioService|Intel\(R\) TPM Provisioning Service|dbupdate|DoSvc$'
+        -
+          macro: '{$SERVICE.STARTUPNAME.MATCHES}'
+          value: '^automatic|automatic delayed$'
+        -
+          macro: '{$SERVICE.STARTUPNAME.NOT_MATCHES}'
+          value: ^manual|disabled$
+        -
           macro: '{$URLQBITTORRENT}'
-          value: ''
+          value: 'http://192.168.0.145:8080'
         -
           macro: '{$VMWARE.PASSWORD}'
           description: 'VMware service {$USERNAME} user password'
@@ -484,7 +853,7 @@ zabbix_export:
           description: 'VMware service user name'
         -
           macro: '{$VMWARE.VM.UUID}'
-          value: 
+          value: 4c4c4544-0051-5710-8057-b1c04f474d31
           description: 'VM UUID'
       valuemaps:
         -
@@ -499,3 +868,33 @@ zabbix_export:
             -
               value: '2'
               newvalue: suspended
+        -
+          name: 'Windows service state'
+          mappings:
+            -
+              value: '0'
+              newvalue: Running
+            -
+              value: '1'
+              newvalue: Paused
+            -
+              value: '2'
+              newvalue: 'Start pending'
+            -
+              value: '3'
+              newvalue: 'Pause pending'
+            -
+              value: '4'
+              newvalue: 'Continue pending'
+            -
+              value: '5'
+              newvalue: 'Stop pending'
+            -
+              value: '6'
+              newvalue: Stopped
+            -
+              value: '7'
+              newvalue: Unknown
+            -
+              value: '255'
+              newvalue: 'No such service'
