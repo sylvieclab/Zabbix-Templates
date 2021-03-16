@@ -1,12 +1,11 @@
 
-**Zoe's Collective Template**
+**Zoe's Zabbix Templates**
 
 This repository is a backup of my templates that I have created and used in my Zabbix environment. These are developed and tested running version 5.4.0alpha2. I primarily use this to monitor my Plex, Radarr, Sonarr, media libraries, and game servers.
 
 > Files in repository
-> - zoe_zbx_template.yaml - This is the default language Zabbix imports and exports in.
-> - zoe_zbx_template.json
-> - zoe_zbx_template.xml
+> - media_monitoring_template.yaml - For monitoring Plex servers running qBittorrent, Radarr, and Sonarr. See more at ther bottom under "What is included in the "Media Monitoring" template?"
+> - collective_template.yaml - Device monitoring of resources. See more at the bottom under "What is included in the "collective" template?"
 
 ***Getting Started / How to Use***
 
