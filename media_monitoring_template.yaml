@@ -1,0 +1,221 @@
+zabbix_export:
+  version: '5.4'
+  date: '2021-03-16T17:53:10Z'
+  groups:
+    -
+      name: 'Virtual Machines'
+  templates:
+    -
+      template: 'Media Monitoring'
+      name: 'Media Monitoring'
+      groups:
+        -
+          name: 'Virtual Machines'
+      applications:
+        -
+          name: Media
+      items:
+        -
+          name: apiversion
+          type: HTTP_AGENT
+          key: apiversion
+          delay: 24h
+          history: '0'
+          trends: '0'
+          value_type: TEXT
+          applications:
+            -
+              name: Media
+          url: '{$URLQBITTORRENT}/api/v2/app/webapiVersion'
+          triggers:
+            -
+              expression: '{last(#1)}<>"2.2.1"'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: '{last(#1)}="2.2.1"'
+              name: 'qBittorrent API Version Check'
+              priority: INFO
+              description: 'Checking to make sure the version of qBittorrent''s API hasn''t changed.'
+              manual_close: 'YES'
+        -
+          name: 'Conection Status'
+          type: DEPENDENT
+          key: qbittorrent.connection_status
+          delay: '0'
+          history: '0'
+          trends: '0'
+          value_type: TEXT
+          applications:
+            -
+              name: Media
+          preprocessing:
+            -
+              type: JSONPATH
+              parameters:
+                - $.connection_status
+              error_handler: CUSTOM_VALUE
+              error_handler_params: 'Cannot connect to qBittorrent'
+          master_item:
+            key: transferinfo
+          triggers:
+            -
+              expression: '{last(#1)}<>"firewalled"'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: '{last(#1)}="firewalled"'
+              name: 'qBittorrent Firewall Status'
+              priority: WARNING
+              description: 'Checking to make sure qBittorrent is "firewalled".'
+        -
+          name: 'Download Speed'
+          type: DEPENDENT
+          key: qbittorrent.download
+          delay: '0'
+          history: 6h
+          trends: '0'
+          value_type: TEXT
+          applications:
+            -
+              name: Media
+          preprocessing:
+            -
+              type: JSONPATH
+              parameters:
+                - $.dl_info_speed
+          master_item:
+            key: transferinfo
+        -
+          name: 'Download Data'
+          type: DEPENDENT
+          key: qbittorrent.dwldata
+          delay: '0'
+          history: 6h
+          trends: '0'
+          value_type: TEXT
+          applications:
+            -
+              name: Media
+          preprocessing:
+            -
+              type: JSONPATH
+              parameters:
+                - $.dl_info_data
+          master_item:
+            key: transferinfo
+        -
+          name: 'qBittorrent Version'
+          type: HTTP_AGENT
+          key: qbittorrent.version
+          delay: 24h
+          history: '0'
+          trends: '0'
+          value_type: TEXT
+          applications:
+            -
+              name: Media
+          url: '{$URLQBITTORRENT}/api/v2/app/version'
+          triggers:
+            -
+              expression: '{last()}<>"v4.1.9.1"'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: '{last()}="v4.1.9.1"'
+              name: 'qBittorrent Version Check'
+              priority: INFO
+              description: 'Checking to make sure the version of qBittorrent hasn''t changed.'
+        -
+          name: 'Radarr Health Check'
+          type: HTTP_AGENT
+          key: radarr.healthcheck
+          history: 1d
+          trends: '0'
+          value_type: TEXT
+          applications:
+            -
+              name: Media
+          preprocessing:
+            -
+              type: JSONPATH
+              parameters:
+                - '$..[''message'']'
+              error_handler: CUSTOM_VALUE
+              error_handler_params: Healthy
+          url: '{$RADARRURL}/api/v3/health?apikey={$RADARRAPI}'
+          triggers:
+            -
+              expression: '{last(#2)}<>"Healthy"'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: '{last(#2)}="Healthy"'
+              name: 'Radarr Health Check Failed'
+              priority: WARNING
+              description: 'This trigger uses the http agent item for pulling Radarr API response relating to the health of Radarr.  Will out the "message" field of the response as operational data.'
+        -
+          name: 'Sonarr Health Check'
+          type: HTTP_AGENT
+          key: sonarr.healthcheck
+          history: 1d
+          trends: '0'
+          value_type: TEXT
+          applications:
+            -
+              name: Media
+          preprocessing:
+            -
+              type: JSONPATH
+              parameters:
+                - '$..[''message'']'
+              error_handler: CUSTOM_VALUE
+              error_handler_params: Healthy
+          url: '{$SONARRURL}/api/v3/health?apikey={$SONARRAPI}'
+          triggers:
+            -
+              expression: '{last(#2)}<>"Healthy"'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: '{last(#2)}="Healthy"'
+              name: 'Sonarr Health Check Failed'
+              priority: WARNING
+              description: 'This trigger uses the http agent item for pulling Sonarr API response relating to the health of Radarr.  Will out the "message" field of the response as operational data.'
+        -
+          name: 'torrent list'
+          type: HTTP_AGENT
+          key: torrentlist
+          delay: 5m
+          history: 1h
+          trends: '0'
+          value_type: TEXT
+          applications:
+            -
+              name: Media
+          preprocessing:
+            -
+              type: JSONPATH
+              parameters:
+                - '$..[''name'']'
+              error_handler: CUSTOM_VALUE
+              error_handler_params: 'Torrent queue empty'
+          url: '{$URLQBITTORRENT}/api/v2/torrents/info'
+        -
+          name: 'qBittorrent transferInfo'
+          type: HTTP_AGENT
+          key: transferinfo
+          delay: 24h
+          history: '0'
+          trends: '0'
+          value_type: TEXT
+          applications:
+            -
+              name: Media
+          url: '{$URLQBITTORRENT}/api/v2/transfer/info'
+      macros:
+        -
+          macro: '{$RADARRAPI}'
+          value: 
+        -
+          macro: '{$RADARRURL}'
+          value: ''
+        -
+          macro: '{$SONARRAPI}'
+          value: 
+        -
+          macro: '{$SONARRURL}'
+          value: ''
+        -
+          macro: '{$URLQBITTORRENT}'
+          value: ''

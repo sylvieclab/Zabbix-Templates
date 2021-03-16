@@ -1,11 +1,9 @@
 zabbix_export:
   version: '5.4'
-  date: '2021-03-07T02:10:35Z'
+  date: '2021-03-16T17:53:42Z'
   groups:
     -
       name: Hypervisors
-    -
-      name: Templates
     -
       name: 'Virtual Machines'
   templates:
@@ -14,14 +12,12 @@ zabbix_export:
       name: 'Zoes Collective Template'
       groups:
         -
-          name: Templates
+          name: 'Virtual Machines'
       applications:
         -
           name: CPU
         -
           name: Memory
-        -
-          name: qBittorrent
         -
           name: Services
         -
@@ -29,104 +25,6 @@ zabbix_export:
         -
           name: VMWare
       items:
-        -
-          name: apiversion
-          type: HTTP_AGENT
-          key: apiversion
-          delay: 24h
-          history: '0'
-          trends: '0'
-          value_type: TEXT
-          applications:
-            -
-              name: qBittorrent
-          url: '{$URLQBITTORRENT}/api/v2/app/webapiVersion'
-          triggers:
-            -
-              expression: '{last(#1)}<>"2.2.1"'
-              name: 'qBittorrent API Version Check'
-              priority: INFO
-              description: 'Checking to make sure the version of qBittorrent''s API hasn''t changed.'
-              manual_close: 'YES'
-        -
-          name: 'Conection Status'
-          type: DEPENDENT
-          key: qbittorrent.connection_status
-          delay: '0'
-          history: 7d
-          trends: '0'
-          value_type: TEXT
-          applications:
-            -
-              name: qBittorrent
-          preprocessing:
-            -
-              type: JSONPATH
-              parameters:
-                - $.connection_status
-          master_item:
-            key: transferinfo
-          triggers:
-            -
-              expression: '{last(#1)}<>"firewalled"'
-              recovery_mode: RECOVERY_EXPRESSION
-              recovery_expression: '{last(#1)}="firewalled"'
-              name: 'Firewall Status'
-              priority: WARNING
-        -
-          name: 'Download Speed'
-          type: DEPENDENT
-          key: qbittorrent.download
-          delay: '0'
-          history: 7d
-          trends: 14d
-          units: Bps
-          applications:
-            -
-              name: qBittorrent
-          preprocessing:
-            -
-              type: JSONPATH
-              parameters:
-                - $.dl_info_speed
-          master_item:
-            key: transferinfo
-        -
-          name: 'Download Data'
-          type: DEPENDENT
-          key: qbittorrent.dwldata
-          delay: '0'
-          history: 7d
-          trends: 14d
-          applications:
-            -
-              name: qBittorrent
-          preprocessing:
-            -
-              type: JSONPATH
-              parameters:
-                - $.dl_info_data
-          master_item:
-            key: transferinfo
-        -
-          name: 'qBittorrent Version'
-          type: HTTP_AGENT
-          key: qbittorrent.version
-          delay: 24h
-          history: '0'
-          trends: '0'
-          value_type: TEXT
-          applications:
-            -
-              name: qBittorrent
-          url: '{$URLQBITTORRENT}/api/v2/app/version'
-          triggers:
-            -
-              expression: '{last()}<>"v4.1.9.1"'
-              name: 'qBittorrent Version Check'
-              priority: INFO
-              description: 'Checking to make sure the version of qBittorrent hasn''t changed.'
-              manual_close: 'YES'
         -
           name: 'CPU utilization'
           key: system.cpu.util
@@ -145,6 +43,7 @@ zabbix_export:
               name: 'CPU Utilization over 70%'
               priority: WARNING
               description: 'CPU Utilization on device is running over 70% over a 5 minute period.'
+              manual_close: 'YES'
             -
               expression: '{min(5)}>=80'
               recovery_mode: RECOVERY_EXPRESSION
@@ -152,6 +51,7 @@ zabbix_export:
               name: 'CPU Utilization over 80%'
               priority: AVERAGE
               description: 'CPU Utilization on device is running over 80% over a 5 minute period.'
+              manual_close: 'YES'
             -
               expression: '{min(5)}>=90'
               recovery_mode: RECOVERY_EXPRESSION
@@ -159,6 +59,7 @@ zabbix_export:
               name: 'CPU Utilization over 90%'
               priority: HIGH
               description: 'CPU Utilization on device is running over 90% over a 5 minute period.'
+              manual_close: 'YES'
             -
               expression: '{min(5)}>=98'
               recovery_mode: RECOVERY_EXPRESSION
@@ -166,37 +67,7 @@ zabbix_export:
               name: 'CPU Utilization over 98%'
               priority: DISASTER
               description: 'CPU Utilization on device is running over 98% over a 5 minute period.'
-        -
-          name: 'torrent list'
-          type: HTTP_AGENT
-          key: torrentlist
-          delay: 5m
-          history: 1h
-          trends: '0'
-          value_type: TEXT
-          applications:
-            -
-              name: qBittorrent
-          preprocessing:
-            -
-              type: JSONPATH
-              parameters:
-                - '$..[''name'']'
-              error_handler: CUSTOM_VALUE
-              error_handler_params: 'Torrent queue empty'
-          url: '{$URLQBITTORRENT}/api/v2/torrents/info'
-        -
-          name: 'qBittorrent transferInfo'
-          type: HTTP_AGENT
-          key: transferinfo
-          delay: 5m
-          history: '0'
-          trends: '0'
-          value_type: TEXT
-          applications:
-            -
-              name: qBittorrent
-          url: '{$URLQBITTORRENT}/api/v2/transfer/info'
+              manual_close: 'YES'
         -
           name: 'CPU usage'
           type: SIMPLE
@@ -265,9 +136,9 @@ zabbix_export:
                 - 1h
           triggers:
             -
-              expression: '{min(2)}=0'
+              expression: '{last(#1)}=0'
               recovery_mode: RECOVERY_EXPRESSION
-              recovery_expression: '{min(2)}=1'
+              recovery_expression: '{last(#1)}=1'
               name: 'VM is powered off'
               priority: INFO
               description: 'Data is reporting the device as powered off for the last 2 minutes. If this is expected, set the device in maintenance mode. If not, power on the device. This alert will auto resolve after getting 2 minutes of data showing a powered on state.'
@@ -340,8 +211,12 @@ zabbix_export:
                     formulaid: B
                   -
                     macro: '{#SERVICE.NAME}'
-                    value: 'Spooler_*|StorSvc_*|SysMain_*|SystemEventsBroker_*|Themes_*|TrkWks_*|UserManager_*|UsoSvc_*|VGAuthService_*|VM3DService_*|Wcmsvc_*|WinDefend_*|Winmgmt_*|WpnService_*|WpnUserService_a7ae7_*|wscsvc_*|WSearch_*|Zabbix Agent_*|'
+                    value: 'Spooler_*|StorSvc_*|SysMain_*|SystemEventsBroker_*|Themes_*|TrkWks_*|UserManager_*|UsoSvc_*|VGAuthService_*|VM3DService_*|Wcmsvc_*|WinDefend_*|Winmgmt_*|WpnService_*|WpnUserService_a7ae7_*|wscsvc_*|WSearch_*|Zabbix Agent_*'
                     formulaid: C
+                  -
+                    macro: '{#SERVICE.NAME}'
+                    value: 'mpssvc_*|TrustedInstaller_*|WpnUserService_966a4e_*|WpnUserService_*|OneSyncSvc_*|CDPUserSvc_*'
+                    formulaid: D
               operations:
                 -
                   operationobject: ITEM_PROTOTYPE
@@ -618,6 +493,31 @@ zabbix_export:
                   operator: LIKE
                   value: 'Zabbix Agent'
                   discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: mpssvc
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: TrustedInstaller
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: WpnUserService
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: OneSyncSvc
+                  discover: NO_DISCOVER
+                -
+                  operationobject: ITEM_PROTOTYPE
+                  operator: LIKE
+                  value: CDPUserSvc
+                  discover: NO_DISCOVER
         -
           name: 'Discover VMware clusters'
           type: SIMPLE
@@ -643,6 +543,19 @@ zabbix_export:
           password: '{$VMWARE.PASSWORD}'
           item_prototypes:
             -
+              name: 'Free space on datastore {#DATASTORE}'
+              type: SIMPLE
+              key: 'vmware.datastore.size[{$VMWARE.URL},{#DATASTORE},free]'
+              history: 7d
+              trends: 14d
+              value_type: FLOAT
+              units: B
+              username: '{$VMWARE.USERNAME}'
+              password: '{$VMWARE.PASSWORD}'
+              applications:
+                -
+                  name: VMWare
+            -
               name: 'Free space on datastore {#DATASTORE} (percentage)'
               type: SIMPLE
               key: 'vmware.datastore.size[{$VMWARE.URL},{#DATASTORE},pfree]'
@@ -652,6 +565,30 @@ zabbix_export:
               units: '%'
               username: '{$VMWARE.USERNAME}'
               password: '{$VMWARE.PASSWORD}'
+              applications:
+                -
+                  name: VMWare
+            -
+              name: 'Used space on datastore {#DATASTORE} (percentage)'
+              type: CALCULATED
+              key: 'vmware.datastore.size[{$VMWARE.URL},{#DATASTORE},pused]'
+              history: 7d
+              trends: 14d
+              value_type: FLOAT
+              units: '%'
+              params: '100 * last("vmware.datastore.size[{$VMWARE.URL},{#DATASTORE},used]") / last("vmware.datastore.size[{$VMWARE.URL},{#DATASTORE}]")'
+              applications:
+                -
+                  name: VMWare
+            -
+              name: 'Used space on datastore {#DATASTORE}'
+              type: CALCULATED
+              key: 'vmware.datastore.size[{$VMWARE.URL},{#DATASTORE},used]'
+              history: 7d
+              trends: 14d
+              value_type: FLOAT
+              units: B
+              params: 'last("vmware.datastore.size[{$VMWARE.URL},{#DATASTORE}]") - last("vmware.datastore.size[{$VMWARE.URL},{#DATASTORE},free]")'
               applications:
                 -
                   name: VMWare
@@ -768,28 +705,86 @@ zabbix_export:
                   recovery_expression: '{min(5)}>2'
                   name: 'Free disk space is less than 2% on {#FSNAME}'
                   priority: DISASTER
-                  description: 'Available drive storage has fallen below 2%. You do not need to manually close this item. Get on the device and return available storage to greater than 2% and the alert will auto resolve.'
+                  description: |
+                    Available drive storage has fallen below 2%. You do not need to manually close this item. Get on the device and return available storage to greater than 2% and the alert will auto resolve.
+                    
+                    Steps to resolve:
+                    Run Treesize (https://www.jam-software.com/treesize_free) on the directory to find exact locations using most storage. Proceed with steps below.
+                    Check and remove files in Windows/Software Distribution/Download if date is not today.
+                    Check Windows/Temp for files older than 30 days.
+                    Use the "Disk cleanup tool".
+                    Check Windows/WinSxS - If larger than 5 or 6GB, follow the next steps below.
+                     
+                    Run Powershell or Command Prompt and run the first command.
+                    dism /Online /Cleanup-Image /AnalyzeComponentStore
+                    The result from this command should tell you if "component store cleanup" is recommended. If yes, use the following command.
+                    
+                    If space is commonly falling this low, consider using the SPSuperseded parameter with dism. This will reduce the amount of space used by a service pack.
+                    dism /Online /Cleanup-Image /SPSuperseded
                 -
                   expression: '{min(#5)}<=10'
                   recovery_mode: RECOVERY_EXPRESSION
                   recovery_expression: '{min(5)}>10'
                   name: 'Free disk space is less than 10% on {#FSNAME}'
                   priority: HIGH
-                  description: 'Available drive storage has fallen below 10%. You do not need to manually close this item. Get on the device and return available storage to greater than 2% and the alert will auto resolve.'
+                  description: |
+                    Available drive storage has fallen below 10%. You do not need to manually close this item. Get on the device and return available storage to greater than 2% and the alert will auto resolve.
+                    
+                    Steps to resolve:
+                    Run Treesize (https://www.jam-software.com/treesize_free) on the directory to find exact locations using most storage. Proceed with steps below.
+                    Check and remove files in Windows/Software Distribution/Download if date is not today.
+                    Check Windows/Temp for files older than 30 days.
+                    Use the "Disk cleanup tool".
+                    Check Windows/WinSxS - If larger than 5 or 6GB, follow the next steps below.
+                     
+                    Run Powershell or Command Prompt and run the first command.
+                    dism /Online /Cleanup-Image /AnalyzeComponentStore
+                    The result from this command should tell you if "component store cleanup" is recommended. If yes, use the following command.
+                    
+                    If space is commonly falling this low, consider using the SPSuperseded parameter with dism. This will reduce the amount of space used by a service pack.
+                    dism /Online /Cleanup-Image /SPSuperseded
                 -
                   expression: '{min(#5)}<=15'
                   recovery_mode: RECOVERY_EXPRESSION
                   recovery_expression: '{min(5)}>15'
                   name: 'Free disk space is less than 15% on {#FSNAME}'
                   priority: AVERAGE
-                  description: 'Available drive storage has fallen below 15%. You do not need to manually close this item. Get on the device and return available storage to greater than 2% and the alert will auto resolve.'
+                  description: |
+                    Available drive storage has fallen below 15%. You do not need to manually close this item. Get on the device and return available storage to greater than 2% and the alert will auto resolve.
+                    
+                    Steps to resolve:
+                    Run Treesize (https://www.jam-software.com/treesize_free) on the directory to find exact locations using most storage. Proceed with steps below.
+                    Check and remove files in Windows/Software Distribution/Download if date is not today.
+                    Check Windows/Temp for files older than 30 days.
+                    Use the "Disk cleanup tool".
+                    Check Windows/WinSxS - If larger than 5 or 6GB, follow the next steps below.
+                     
+                    Run Powershell or Command Prompt and run the first command.
+                    dism /Online /Cleanup-Image /AnalyzeComponentStore
+                    The result from this command should tell you if "component store cleanup" is recommended. If yes, use the following command.
+                    
+                    dism /online /Cleanup-Image /StartComponentCleanup
                 -
                   expression: '{min(#5)}<=20'
                   recovery_mode: RECOVERY_EXPRESSION
                   recovery_expression: '{min(5)}>20'
                   name: 'Free disk space is less than 20% on {#FSNAME}'
                   priority: WARNING
-                  description: 'Available drive storage has fallen below 20%. You do not need to manually close this item. Get on the device and return available storage to greater than 2% and the alert will auto resolve.'
+                  description: |
+                    Available drive storage has fallen below 20%. You do not need to manually close this item. Get on the device and return available storage to greater than 2% and the alert will auto resolve.
+                    
+                    Steps to resolve:
+                    Run Treesize (https://www.jam-software.com/treesize_free) on the directory to find exact locations using most storage. Proceed with steps below.
+                    Check and remove files in Windows/Software Distribution/Download if date is not today.
+                    Check Windows/Temp for files older than 30 days.
+                    Use the "Disk cleanup tool".
+                    Check Windows/WinSxS - If larger than 5 or 6GB, follow the next steps below.
+                     
+                    Run Powershell or Command Prompt and run the first command.
+                    dism /Online /Cleanup-Image /AnalyzeComponentStore
+                    The result from this command should tell you if "component store cleanup" is recommended. If yes, use the following command.
+                    
+                    dism /online /Cleanup-Image /StartComponentCleanup
             -
               name: 'Used disk space on {#FSNAME} (percentage)'
               type: SIMPLE
@@ -840,9 +835,6 @@ zabbix_export:
           macro: '{$SERVICE.STARTUPNAME.NOT_MATCHES}'
           value: ^manual|disabled$
         -
-          macro: '{$URLQBITTORRENT}'
-          value: 'http://192.168.0.145:8080'
-        -
           macro: '{$VMWARE.PASSWORD}'
           description: 'VMware service {$USERNAME} user password'
         -
@@ -853,7 +845,7 @@ zabbix_export:
           description: 'VMware service user name'
         -
           macro: '{$VMWARE.VM.UUID}'
-          value: 4c4c4544-0051-5710-8057-b1c04f474d31
+          value: 
           description: 'VM UUID'
       valuemaps:
         -

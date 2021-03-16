@@ -1,7 +1,7 @@
 
 **Zoe's Collective Template**
 
-This repository is a backup of my templates that I have created and used in my Zabbix environment. These are developed and tested running version 5.4.0alpha2. I primarily use this to monitor my plex instance and libraries that are run through VMWare ESXi. As such, this template can discover newly created virtual machines.
+This repository is a backup of my templates that I have created and used in my Zabbix environment. These are developed and tested running version 5.4.0alpha2. I primarily use this to monitor my Plex, Radarr, Sonarr, media libraries, and game servers.
 
 > Files in repository
 > - zoe_zbx_template.yaml - This is the default language Zabbix imports and exports in.
@@ -9,6 +9,8 @@ This repository is a backup of my templates that I have created and used in my Z
 > - zoe_zbx_template.xml
 
 ***Getting Started / How to Use***
+
+There are two templates listed in this repository. One is for hardware and service monitoring, the other is more directed toward monitoring a Plex or other media setup. You can use just one of them or both.
 
  - Download the .yaml file.
  -  In your Zabbix frontend, on the left sidebar navigate to Configuration > Templates.
@@ -39,24 +41,31 @@ You will need to enable SSH access to your VMware ESXi host.
  - Copy the UUID and exit out of your host.
  - Redo the first step, this time choose disable secure shell.
 
-***What is included in this template?***
+***What is included in the "Media Monitoring" template?***
+*This list is not final and will continue to be added to.*
+ - qBittorrent Version and qBittorrent API version check: Item and Triggers
+ - qBittorrent Torrent List: Item - If the torrent queue is empty, there is a custom fail during preprocessing that will write the result as "Torrent queue empty".
+ - qBittorrent Connection Status: Item & Trigger
+ - qBittorrent Download Speed: Item
+ - qBittorrent Data Downloaded Total: Item
+ - Radarr Health Check: Item and Trigger
+ - Sonarr Health Check: Item and Trigger
+ 
+***What is included in the "collective" template?***
 *This list is not final and will continue to be added to.*
  - CPU Utilization (Percentage): Item and Triggers
  - CPU Usage (Hz, MHz, GHz): Item
  - ESXi Host memory Usage: Item
  - Filesystem Discovery (Percent and numeric): Items and Triggers.
  - Guest Memory Usage (Numeric): 
- - Memory Max Size (GB): Item
- - Power State: Items and Triggers
- - qBittorrent Version and qBittorrent API version check: Item and Triggers
- - qBittorrent Torrent List: Item - If the torrent queue is empty, there is a custom fail during preprocessing that will write the result as "Torrent queue empty".
- - qBittorrent Connection Status: Item & Trigger
- - qBittorrent Download Speed: Item
- - qBittorrent Amount Downloaded: Item
+ - Memory Max Size (Numberic): Item
  - Power State: Items and Triggers
  - Uptime: Item
  - VMware Cluster Discovery
- - VMware Datastore Discovery
+ - VMware Datastore Discovery:
+  - Free space (pencentage and in bytes)
+  - Used space (percentage and bytes)
+  - Total store size
  - VMware Hypervisor Discovery - Will sort into host group "Hypervisors")
  - VMware Virtual Machine Discovery - Will sort into host group "Virtual Machines")
  - Windows Services Discovery - Custom overrides are pre-set to filter out annoying Windows background services (looking at you, BITS and OneSync.)
