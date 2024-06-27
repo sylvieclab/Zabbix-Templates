@@ -1,7 +1,7 @@
 
-**Zoe's Zabbix Templates**
+**Zabbix Templates**
 
-This repository is a backup of my templates that I have created and used in my Zabbix environment. These are developed and tested running version 5.4.0alpha2. I primarily use this to monitor my Plex, Radarr, Sonarr, media libraries, and game servers.
+This repository is an old backup of my templates that I had created and used in my Zabbix environment. These were developed and tested running version 5.4.0alpha2. I primarily used this to monitor my Plex, Radarr, Sonarr, media libraries, and game servers.
 
 > Files in repository
 > - media_monitoring_template.yaml - For monitoring Plex servers running qBittorrent, Radarr, and Sonarr. See more at ther bottom under "What is included in the "Media Monitoring" template?"
